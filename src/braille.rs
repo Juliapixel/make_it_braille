@@ -16,6 +16,7 @@ const BRAILLE_CHARS: [char; 256] = [
 '⣻', '⣼', '⣽', '⣾', '⣿'
 ];
 
+#[allow(dead_code)]
 pub struct BrailleImg {
     braille_vals: Vec<u8>,
     dot_width: u32,
