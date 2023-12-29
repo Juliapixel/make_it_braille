@@ -21,12 +21,12 @@ impl Ditherer for Sierra2Row {
         for y in 0..buffer.height() {
             for x in 0..buffer.width() {
                 let cur_pix = buffer.get_pixel_mut(x, y);
-                let error = if cur_pix.0[0] > 127 {
+                let error = if cur_pix.0[0] > 96 {
                     cur_pix.0[0] as i32 - 255
                 } else {
                     cur_pix.0[0] as i32
                 } >> 5;
-                if cur_pix.0[0] > 127 {
+                if cur_pix.0[0] > 96 {
                     cur_pix.0[0] = 255;
                 } else {
                     cur_pix.0[0] = 0;
@@ -52,7 +52,7 @@ pub struct None;
 impl Ditherer for None {
     fn dither(&self, buffer: &mut GrayImage) {
         for pix in buffer.pixels_mut() {
-            if pix.0[0] > 127 {
+            if pix.0[0] > 96 {
                 pix.0[0] = 255;
             } else {
                 pix.0[0] = 0;
