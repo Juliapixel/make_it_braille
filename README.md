@@ -1,7 +1,7 @@
 # make_it_braille
 makes things braille
 
-install with `cargo install --path .`
+install with `cargo install --locked --path .`
 
 ## Example
 
