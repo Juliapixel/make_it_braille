@@ -119,7 +119,7 @@ impl BrailleImg {
 
         let mut braille_img = BrailleImg::new(gray_img.width(), gray_img.height());
         for (x, y, pix) in gray_img.enumerate_pixels() {
-            if pix.0[0] > 128 {
+            if pix.0[0] > 96 {
                 braille_img.set_dot(x, y, true);
             }
         }
