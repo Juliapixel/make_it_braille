@@ -26,10 +26,12 @@ pub struct Args {
     /// invert dots, making light values in the source image be raised dots instead
     pub invert: bool,
 
-    #[arg(long, default_value = "1.0")]
+    #[arg(long, long_help, default_value = "0.0", help = "adjust contrast")]
+    /// adjust contrast, positive values increase contrast, negative values decrease it
     pub contrast: f32,
 
-    #[arg(long, default_value = "1")]
+    #[arg(long, long_help, default_value = "0", help = "adjust brightness")]
+    /// adjust brightness, positive values increase brightness, negative values decrease it
     pub brighten: i32,
 
     #[arg(short, action = clap::ArgAction::Count)]
