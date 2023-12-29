@@ -133,7 +133,8 @@ fn main() -> Result<(), Error>{
 
     let braille = braille::BrailleImg::from_image(
         image,
-        ditherer
+        ditherer,
+        !args.invert
     );
 
     println!("{}", braille.to_str(!args.allow_blank_chars, true));

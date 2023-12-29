@@ -93,7 +93,7 @@ impl BrailleImg {
     }
 
     // TODO: remove the intermediary GrayImage completely, as it's not needed anymore.
-    pub fn from_image(img: DynamicImage, ditherer: &dyn Ditherer) -> Self {
+    pub fn from_image(img: DynamicImage, ditherer: &dyn Ditherer, invert: bool) -> Self {
         let mut gray_img = image::GrayImage::new(img.width(), img.height());
         let img = img.into_rgba8();
 
@@ -119,8 +119,14 @@ impl BrailleImg {
 
         let mut braille_img = BrailleImg::new(gray_img.width(), gray_img.height());
         for (x, y, pix) in gray_img.enumerate_pixels() {
-            if pix.0[0] > 96 {
-                braille_img.set_dot(x, y, true);
+            if invert {
+                if pix.0[0] > 96 {
+                    braille_img.set_dot(x, y, true);
+                }
+            } else {
+                if pix.0[0] < 96 {
+                    braille_img.set_dot(x, y, true);
+                }
             }
         }
         return braille_img;

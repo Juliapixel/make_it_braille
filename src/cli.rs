@@ -15,6 +15,9 @@ pub struct Args {
     #[arg(long)]
     pub allow_blank_chars: bool,
 
+    #[arg(long)]
+    pub invert: bool,
+
     #[arg(long, default_value = "1.0")]
     pub contrast: f32,
 
