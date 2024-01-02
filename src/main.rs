@@ -116,12 +116,13 @@ fn main() -> Result<(), Error>{
     debug!("target dimensions: {}x{}", width, height);
 
     image = image.resize_exact(width, height, image::imageops::FilterType::Triangle);
-    image = image.adjust_contrast(args.contrast);
+    image = image.adjust_contrast(args.contrast); // for some reason this also affects the alpha channel???
     image = image.brighten(args.brighten);
 
+    // this is just so i can make sure the output is right and the filters are working properly
     #[cfg(debug_assertions)]
     {
-        let out_dir = PathBuf::from("debug.png");
+        let out_dir = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/debug.png"));
         debug!("saving debug image to {}", out_dir.canonicalize().unwrap_or(out_dir.clone()).as_os_str().to_string_lossy());
         image.save(out_dir.clone()).unwrap();
     }
