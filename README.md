@@ -1,7 +1,9 @@
 # make_it_braille
 makes things braille
 
-install with `cargo install --locked --path .`
+install with `cargo install --locked --git "https://github.com/Juliapixel/make_it_braille.git"`
+
+do `make_it_braille -h` to get a short help
 
 ## Example
 
