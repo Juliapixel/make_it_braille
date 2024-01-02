@@ -61,7 +61,7 @@ fn main() -> Result<(), Error>{
 
     env_logger::init_from_env(
         env_logger::Env::new()
-        .filter_or("BRAILLE_LOG", dbg)
+            .filter_or("BRAILLE_LOG", dbg)
     );
 
     debug!("parsed arguments: {args:#?}");
@@ -70,7 +70,7 @@ fn main() -> Result<(), Error>{
 
     info!("opening image: {}", args.file);
 
-    let mut image = if img_path.exists() {
+    let mut image = if img_path.is_file() {
         debug!("opening image as file");
         match image::open(args.file) {
             Ok(o) => o,
@@ -80,12 +80,20 @@ fn main() -> Result<(), Error>{
             }
         }
     } else {
-        debug!("trying to fetch image as URL");
+        debug!("path either didnt exist or wasn't a file, trying to fetch image as URL");
         match try_get_from_url(&args.file) {
             Ok(o) => o,
             Err(e) => {
-                error!("{e}");
-                return Err(e)?;
+                match e {
+                    FetchError::NotAnUrl => {
+                        error!("the provided file was neither a valid URL nor a valid file");
+                        return Err(e)?;
+                    },
+                    e => {
+                        error!("{e}");
+                        return Err(e)?;
+                    }
+                }
             },
         }
     };
