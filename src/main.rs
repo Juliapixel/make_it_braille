@@ -106,19 +106,19 @@ fn main() -> Result<(), Error>{
         (None, None) => {
             let aspect_ratio = image.width() as f32 / image.height() as f32;
             let h = (64 as f32 / aspect_ratio).round() as u32;
-            (64, h)
+            (64, h.clamp(1, u32::MAX))
         },
         (None, Some(h)) => {
             let aspect_ratio = image.width() as f32 / image.height() as f32;
             let w = (h as f32 * aspect_ratio).round() as u32;
-            (w, h)
+            (w.clamp(1, u32::MAX), h.clamp(1, u32::MAX))
         },
         (Some(w), None) => {
             let aspect_ratio = image.width() as f32 / image.height() as f32;
             let h = (w as f32 / aspect_ratio).round() as u32;
-            (w, h)
+            (w.clamp(1, u32::MAX), h.clamp(1, u32::MAX))
         }
-        (Some(w), Some(h)) => (w, h),
+        (Some(w), Some(h)) => (w.clamp(1, u32::MAX), h.clamp(1, u32::MAX)),
     };
 
     debug!("target dimensions: {}x{}", width, height);
