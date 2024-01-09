@@ -1,6 +1,6 @@
 [package]
 name = "make_it_braille"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["Juliapixel <julia@juliapixel.com>"]
 description = "A CLI tool to turn images into unicode braille images"

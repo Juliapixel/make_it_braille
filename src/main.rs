@@ -1,4 +1,4 @@
-use std::{path::PathBuf, time::Instant, str::FromStr};
+use std::{path::PathBuf, time::Instant, str::FromStr, io::{Read, stdin}};
 
 use clap::Parser;
 use image::{DynamicImage, EncodableLayout};
@@ -79,6 +79,11 @@ fn main() -> Result<(), Error>{
                 return Err(e)?;
             }
         }
+    } else if args.file == "-" {
+        let mut input = Vec::new();
+        stdin().read_to_end(&mut input)?;
+
+        image::load_from_memory(&input)?
     } else {
         debug!("path either didnt exist or wasn't a file, trying to fetch image as URL");
         match try_get_from_url(&args.file) {

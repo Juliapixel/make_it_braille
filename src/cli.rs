@@ -40,7 +40,7 @@ pub struct Args {
     #[arg(short, action = clap::ArgAction::Count)]
     pub verbose: u8,
 
-    /// either the path to a local image file or an http(s) URL to one
+    /// either the path to a local image file, an http(s) URL to one or "-" to read from stdin
     pub file: String
 }
 
