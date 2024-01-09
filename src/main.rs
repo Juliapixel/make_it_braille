@@ -91,7 +91,7 @@ fn main() -> Result<(), Error>{
             Err(e) => {
                 match e {
                     FetchError::NotAnUrl => {
-                        error!("the provided file was neither a valid URL nor a valid file");
+                        error!("the provided file was neither a valid URL nor a valid file: {}", &args.file);
                         return Err(e)?;
                     },
                     e => {
