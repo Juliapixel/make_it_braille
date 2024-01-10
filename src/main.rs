@@ -1,7 +1,7 @@
 use std::{path::PathBuf, time::Instant, io::{Read, stdin}};
 
 use clap::Parser;
-use image::{DynamicImage, EncodableLayout};
+use image::{DynamicImage, EncodableLayout, GenericImageView};
 use log::{debug, error};
 use make_it_braille as lib;
 use lib::{braille, dithering::{Ditherer, self}};
@@ -132,9 +132,15 @@ fn main() -> Result<(), Error>{
 
     debug!("target dimensions: {}x{}", width, height);
 
-    image = image.resize_exact(width, height, image::imageops::FilterType::Triangle);
-    image = image.adjust_contrast(args.contrast); // for some reason this also affects the alpha channel???
-    image = image.brighten(args.brighten);
+    if (width, height) != image.dimensions() {
+        image = image.resize_exact(width, height, image::imageops::FilterType::Triangle);
+    }
+    if args.contrast != 0.0 {
+        image = image.adjust_contrast(args.contrast); // for some reason this also affects the alpha channel???
+    }
+    if args.brighten != 0 {
+        image = image.brighten(args.brighten);
+    }
 
     // this is just so i can make sure the output is right and the filters are working properly
     #[cfg(debug_assertions)]
