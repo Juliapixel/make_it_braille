@@ -149,6 +149,8 @@ fn main() -> Result<(), Error>{
     let ditherer: &dyn Ditherer = match args.dithering {
         DitheringOption::Sierra2 => &dithering::Sierra2Row,
         DitheringOption::None => &dithering::None,
+        DitheringOption::Bayer4x4 => &dithering::Bayer4x4,
+        DitheringOption::Bayer2x2 => &dithering::Bayer2x2,
     };
 
     let braille = braille::BrailleImg::from_image(

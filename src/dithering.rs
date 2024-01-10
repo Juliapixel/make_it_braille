@@ -1,7 +1,19 @@
+use std::sync::OnceLock;
+
 use image::GrayImage;
 
 pub trait Ditherer {
     fn dither(&self, buffer: &mut GrayImage);
+}
+
+fn _srgb_to_linear(val: u8) -> u8 {
+    static LUT: OnceLock<[u8; 256]> = OnceLock::new();
+
+    LUT.get_or_init(|| {
+        std::array::from_fn(|i| {
+            ((i as f32 / 255.0).powf(1.0/2.2) * 255.0) as u8
+        })
+    })[val as usize]
 }
 
 pub struct Sierra2Row;
@@ -42,6 +54,46 @@ impl Ditherer for Sierra2Row {
                 add_error(buffer, x.checked_sub(1), Some(y + 2), error, 2);
                 add_error(buffer, Some(x)         , Some(y + 2), error, 3);
                 add_error(buffer, x.checked_add(1), Some(y + 2), error, 2);
+            }
+        }
+    }
+}
+
+pub struct Bayer4x4;
+
+const BAYER4X4_MATRIX: [[u8; 4]; 4] = [
+    [0  , 128, 32 , 160],
+    [192, 64 , 224, 96 ],
+    [48 , 176, 16 , 144],
+    [240, 112, 208, 80 ]
+];
+
+impl Ditherer for Bayer4x4 {
+    fn dither(&self, buffer: &mut GrayImage) {
+        for (x, y, pix) in buffer.enumerate_pixels_mut() {
+            if pix.0[0] > BAYER4X4_MATRIX[(y % 4) as usize][(x % 4) as usize] {
+                pix.0[0] = 255;
+            } else {
+                pix.0[0] = 0;
+            }
+        }
+    }
+}
+
+pub struct Bayer2x2;
+
+const BAYER2X2_MATRIX: [[u8; 2]; 2] = [
+    [0  , 128],
+    [192, 64 ]
+];
+
+impl Ditherer for Bayer2x2 {
+    fn dither(&self, buffer: &mut GrayImage) {
+        for (x, y, pix) in buffer.enumerate_pixels_mut() {
+            if pix.0[0] > BAYER2X2_MATRIX[(y % 2) as usize][(x % 2) as usize] {
+                pix.0[0] = 255;
+            } else {
+                pix.0[0] = 0;
             }
         }
     }

@@ -61,5 +61,7 @@ fn validate_greater_than_zero(val: &str) -> Result<u32, &'static str> {
 pub enum DitheringOption {
     #[default]
     Sierra2,
-    None
+    Bayer4x4,
+    Bayer2x2,
+    None,
 }
