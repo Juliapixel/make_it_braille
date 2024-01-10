@@ -1,12 +1,17 @@
-use std::{path::PathBuf, time::Instant, str::FromStr, io::{Read, stdin}};
+use std::{path::PathBuf, time::Instant, io::{Read, stdin}};
 
 use clap::Parser;
 use image::{DynamicImage, EncodableLayout};
-use log::{debug, info, error};
+use log::{debug, error};
 use make_it_braille as lib;
-use lib::{braille, dithering::{Ditherer, self}, cli::{Args, DitheringOption}};
+use lib::{braille, dithering::{Ditherer, self}};
 use reqwest::{header::HeaderMap, Url};
 use thiserror::Error;
+
+mod cli;
+use cli::{Args, DitheringOption};
+
+use crate::cli::Mode;
 
 #[derive(Debug, Error)]
 enum Error {
@@ -20,8 +25,6 @@ enum Error {
 
 #[derive(Debug, Error)]
 enum FetchError {
-    #[error("the provided string was not an URL")]
-    NotAnUrl,
     #[error("the provided URL was not valid")]
     BadUrl,
     #[error(transparent)]
@@ -32,9 +35,7 @@ enum FetchError {
     BadImageData(#[from] image::error::ImageError)
 }
 
-fn try_get_from_url(url: &str) -> Result<DynamicImage, FetchError> {
-    let url = Url::from_str(url).map_err(|_| { FetchError::NotAnUrl })?;
-
+fn try_get_from_url(url: Url) -> Result<DynamicImage, FetchError> {
     let mut headers = HeaderMap::new();
     headers.insert("Accept", "image/png,image/jpeg,image/webp,image/gif,image/tiff".parse().unwrap());
     headers.insert("Referer", url.host_str().ok_or(FetchError::BadUrl)?.parse().unwrap());
@@ -72,41 +73,38 @@ fn main() -> Result<(), Error>{
 
     debug!("parsed arguments: {args:#?}");
 
-    let img_path = PathBuf::from(&args.file);
-
-    info!("opening image: {}", args.file);
-
-    let mut image = if img_path.is_file() {
-        debug!("opening image as file");
-        match image::open(args.file) {
-            Ok(o) => o,
-            Err(e) => {
-                error!("{e}");
-                return Err(e)?;
-            }
-        }
-    } else if args.file == "-" {
-        let mut input = Vec::new();
-        stdin().read_to_end(&mut input)?;
-
-        image::load_from_memory(&input)?
-    } else {
-        debug!("path either didnt exist or wasn't a file, trying to fetch image as URL");
-        match try_get_from_url(&args.file) {
-            Ok(o) => o,
-            Err(e) => {
-                match e {
-                    FetchError::NotAnUrl => {
-                        error!("the provided file was neither a valid URL nor a valid file: {}", &args.file);
-                        return Err(e)?;
-                    },
-                    e => {
-                        error!("{e}");
-                        return Err(e)?;
-                    }
+    let mut image = match args.input {
+        Mode::File(path) => {
+            debug!("opening image as file");
+            match image::open(path) {
+                Ok(o) => o,
+                Err(e) => {
+                    error!("{e}");
+                    return Err(e)?;
                 }
-            },
-        }
+            }
+        },
+        Mode::Url(url) => {
+            debug!("trying to fetch image as URL");
+            match try_get_from_url(url) {
+                Ok(o) => o,
+                Err(e) => {
+                    match e {
+                        e => {
+                            error!("{e}");
+                            return Err(e)?;
+                        }
+                    }
+                },
+            }
+        },
+        Mode::Stdin => {
+            debug!("reading image from stdin");
+            let mut input = Vec::new();
+            stdin().read_to_end(&mut input)?;
+
+            image::load_from_memory(&input)?
+        },
     };
 
     debug!("source image dimensions: {}x{}", image.width(), image.height());

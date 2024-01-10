@@ -1,4 +1,7 @@
+use std::path::PathBuf;
+
 use clap::{Parser, ValueEnum};
+use reqwest::Url;
 
 #[derive(Debug, Parser)]
 #[command(author, version, about)]
@@ -41,7 +44,38 @@ pub struct Args {
     pub verbose: u8,
 
     /// either the path to a local image file, an http(s) URL to one or "-" to read from stdin
-    pub file: String
+    #[arg(value_parser = parse_mode)]
+    pub input: Mode
+}
+
+#[derive(Debug, Clone)]
+pub enum Mode {
+    File(PathBuf),
+    Url(Url),
+    Stdin
+}
+
+fn parse_mode(val: &str) -> Result<Mode, &'static str> {
+    if val == "-" {
+        return Ok(Mode::Stdin)
+    }
+
+    let path = PathBuf::from(val);
+
+    let exists = path.exists();
+    if exists && path.is_file() {
+        return Ok(Mode::File(path));
+    } else if exists {
+        return Err("the given path exists but is not a file");
+    }
+
+    match Url::try_from(val) {
+        Ok(url) => match url.scheme().to_ascii_lowercase() {
+            x if x == "http" || x == "https" => { return Ok(Mode::Url(url)) },
+            _ => { Err("the given URL must be either http or https") }
+        },
+        Err(_) => return Err("the given input was not a valid argument"),
+    }
 }
 
 fn validate_greater_than_zero(val: &str) -> Result<u32, &'static str> {
