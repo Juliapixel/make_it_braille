@@ -24,8 +24,8 @@ enum FetchError {
     NotAnUrl,
     #[error("the provided URL was not valid")]
     BadUrl,
-    #[error("the request could not be completed")]
-    RequestError,
+    #[error(transparent)]
+    RequestError(#[from] reqwest::Error),
     #[error("the server's response was bad")]
     BadResponse,
     #[error(transparent)]
@@ -37,17 +37,23 @@ fn try_get_from_url(url: &str) -> Result<DynamicImage, FetchError> {
 
     let mut headers = HeaderMap::new();
     headers.insert("Accept", "image/png,image/jpeg,image/webp,image/gif,image/tiff".parse().unwrap());
-    headers.insert("Host", url.host_str().ok_or(FetchError::BadUrl)?.parse().unwrap());
+    headers.insert("Referer", url.host_str().ok_or(FetchError::BadUrl)?.parse().unwrap());
+    headers.insert("Cache-Control", "no-cache".parse().unwrap());
+    headers.insert("User-Agent", format!("{}/{}", env!("CARGO_BIN_NAME"), env!("CARGO_PKG_VERSION")).parse().unwrap());
+
 
     let client = reqwest::blocking::ClientBuilder::new()
         .default_headers(headers)
         .build().unwrap();
 
     let resp = client.get(url)
-        .send().map_err(|_| { FetchError::RequestError })?
-        .bytes().map_err(|_| { FetchError::BadResponse })?;
+        .send()?.error_for_status()?;
 
-    image::load_from_memory(resp.as_bytes()).map_err(|e| { FetchError::BadImageData(e) })
+    debug!("response info: {:#?}", &resp);
+
+    let payload = resp.bytes().map_err(|_| { FetchError::BadResponse })?;
+
+    image::load_from_memory(&payload.as_bytes()).map_err(|e| { FetchError::BadImageData(e) })
 }
 
 fn main() -> Result<(), Error>{
