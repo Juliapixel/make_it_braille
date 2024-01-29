@@ -106,7 +106,7 @@ impl BrailleImg {
                 braille_string.push(if break_line { '\n' } else { ' ' });
             }
             if val == 0 && no_empty_chars {
-                braille_string.push(BRAILLE_CHARS[1])
+                braille_string.push(BRAILLE_CHARS[1 << 2])
             } else {
                 braille_string.push(BRAILLE_CHARS[val as usize])
             }
