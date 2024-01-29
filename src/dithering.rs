@@ -16,6 +16,7 @@ fn _srgb_to_linear(val: u8) -> u8 {
     })[val as usize]
 }
 
+/// the Sierra two-row error-difusion dithering algorithm
 pub struct Sierra2Row;
 
 impl Ditherer for Sierra2Row {
@@ -59,6 +60,7 @@ impl Ditherer for Sierra2Row {
     }
 }
 
+/// the Bayer ordered dithering algorithm, with a 4x4 matrix
 pub struct Bayer4x4;
 
 const BAYER4X4_MATRIX: [[u8; 4]; 4] = [
@@ -80,6 +82,7 @@ impl Ditherer for Bayer4x4 {
     }
 }
 
+/// the Bayer ordered dithering algorithm, with a 4x4 matrix
 pub struct Bayer2x2;
 
 const BAYER2X2_MATRIX: [[u8; 2]; 2] = [
@@ -99,6 +102,7 @@ impl Ditherer for Bayer2x2 {
     }
 }
 
+/// No dithering, raises dots over 96
 pub struct None;
 
 impl Ditherer for None {
