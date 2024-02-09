@@ -1,8 +1,19 @@
 use image::DynamicImage;
+use thiserror::Error;
 
 use crate::dithering::Ditherer;
 
-const BRAILLE_CHARS: [char; 256] = [
+/// this is just all 256 braille characters, with the raised dots meaning each
+/// of the following bits, with 0 being the least significant:
+///
+/// ```text
+/// 0  3
+/// 1  4
+/// 2  5
+/// 6  7
+/// ```
+///
+pub const BRAILLE_CHARS: [char; 256] = [
 '⠀', '⠁', '⠂', '⠃', '⠄', '⠅', '⠆', '⠇',
 '⠈', '⠉', '⠊', '⠋', '⠌', '⠍', '⠎', '⠏',
 '⠐', '⠑', '⠒', '⠓', '⠔', '⠕', '⠖', '⠗',
@@ -37,6 +48,12 @@ const BRAILLE_CHARS: [char; 256] = [
 '⣸', '⣹', '⣺', '⣻', '⣼', '⣽', '⣾', '⣿'
 ];
 
+#[derive(Debug, Clone, Error)]
+pub enum Error {
+    #[error("the coordinates (x: {0}, y: {1}) were outside the bounds of the BrailleImg (width: {2}, height: {3})")]
+    OutOfBounds(u32, u32, u32, u32),
+}
+
 #[allow(dead_code)]
 pub struct BrailleImg {
     braille_vals: Vec<u8>,
@@ -47,6 +64,8 @@ pub struct BrailleImg {
 }
 
 impl BrailleImg {
+    /// create a new [BrailleImg] with `width` and `height` dimensions, in dots,
+    /// where each character is 2 dots wide and 4 dots tall
     pub fn new(width: u32, height: u32) -> Self {
         let mut vals: Vec<u8> = Vec::new();
         let x_size = width / 2 + (width % 2);
@@ -69,6 +88,8 @@ impl BrailleImg {
         }
     }
 
+    /// maps x and y coordinates to which bit will represent the dot on the
+    /// character according to [BRAILLE_CHARS]
     fn get_bit_mask(x: u32, y: u32) -> u8 {
         if x % 2 == 0 {
             match y % 4 {
@@ -87,9 +108,13 @@ impl BrailleImg {
         }
     }
 
-    pub fn set_dot(&mut self, x: u32, y: u32, raised: bool) {
+    pub fn set_dot(&mut self, x: u32, y: u32, raised: bool) -> Result<(), Error> {
+        if x > (self.dot_width - 1) || y > (self.dot_height - 1) {
+            return Err(Error::OutOfBounds(x, y, self.char_width, self.char_height))
+        }
         let x_val_pos = x / 2;
         let y_val_pos = y / 4;
+        // unwrapping here is safe since we already did a bounds check beforehand
         let val = self.braille_vals.get_mut((x_val_pos + y_val_pos * self.char_width) as usize).unwrap();
         let mask = BrailleImg::get_bit_mask(x, y);
         if raised {
@@ -97,8 +122,16 @@ impl BrailleImg {
         } else {
             *val &= !mask;
         }
+        return Ok(());
     }
 
+    /// # Arguments
+    /// - `no_empty chars` if true, empty braille characters will be replaced by
+    /// another char with a single dot raised, which avoids skewing of rows of
+    /// characters
+    /// - `break_line` if true, each row of characters will be separated by a
+    /// newline character `\n`, otherwise they will be separated by a space
+    #[deprecated = "you should use BrailleImg::as_str() instead"]
     pub fn to_str(self, no_empty_chars: bool, break_line: bool) -> String {
         let mut braille_string = String::new();
         for (i, val) in self.braille_vals.into_iter().enumerate() {
@@ -109,6 +142,27 @@ impl BrailleImg {
                 braille_string.push(BRAILLE_CHARS[1 << 2])
             } else {
                 braille_string.push(BRAILLE_CHARS[val as usize])
+            }
+        }
+        return braille_string
+    }
+
+    /// # Arguments
+    /// - `no_empty chars` if true, empty braille characters will be replaced by
+    /// another char with a single dot raised, which avoids skewing of rows of
+    /// characters
+    /// - `break_line` if true, each row of characters will be separated by a
+    /// newline character `\n`, otherwise they will be separated by a space
+    pub fn as_str(&self, no_empty_chars: bool, break_line: bool) -> String {
+        let mut braille_string = String::new();
+        for (i, val) in self.braille_vals.iter().enumerate() {
+            if i % self.char_width as usize == 0 && i != 0 {
+                braille_string.push(if break_line { '\n' } else { ' ' });
+            }
+            if *val == 0 && no_empty_chars {
+                braille_string.push(BRAILLE_CHARS[1 << 2])
+            } else {
+                braille_string.push(BRAILLE_CHARS[*val as usize])
             }
         }
         return braille_string
@@ -140,6 +194,7 @@ impl BrailleImg {
         ditherer.dither(&mut gray_img);
 
         let mut braille_img = BrailleImg::new(gray_img.width(), gray_img.height());
+        #[allow(unused_must_use)]
         for (x, y, pix) in gray_img.enumerate_pixels() {
             if invert {
                 if pix.0[0] > 96 {
