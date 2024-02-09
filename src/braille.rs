@@ -48,13 +48,14 @@ pub const BRAILLE_CHARS: [char; 256] = [
 '⣸', '⣹', '⣺', '⣻', '⣼', '⣽', '⣾', '⣿'
 ];
 
+const BRAILLE_LEN: usize = BRAILLE_CHARS[0].len_utf8();
+
 #[derive(Debug, Clone, Error)]
 pub enum Error {
     #[error("the coordinates (x: {0}, y: {1}) were outside the bounds of the BrailleImg (width: {2}, height: {3})")]
     OutOfBounds(u32, u32, u32, u32),
 }
 
-#[allow(dead_code)]
 pub struct BrailleImg {
     braille_vals: Vec<u8>,
     dot_width: u32,
@@ -66,7 +67,10 @@ pub struct BrailleImg {
 impl BrailleImg {
     /// create a new [BrailleImg] with `width` and `height` dimensions, in dots,
     /// where each character is 2 dots wide and 4 dots tall
+    /// # Panics
+    /// if either width or height is 0
     pub fn new(width: u32, height: u32) -> Self {
+        assert!(width != 0 && height != 0, "width and height must be greater than 0");
         let mut vals: Vec<u8> = Vec::new();
         let x_size = width / 2 + (width % 2);
         let extra_row = if height % 4 != 0 {
@@ -154,7 +158,7 @@ impl BrailleImg {
     /// - `break_line` if true, each row of characters will be separated by a
     /// newline character `\n`, otherwise they will be separated by a space
     pub fn as_str(&self, no_empty_chars: bool, break_line: bool) -> String {
-        let mut braille_string = String::new();
+        let mut braille_string = String::with_capacity(self.str_len());
         for (i, val) in self.braille_vals.iter().enumerate() {
             if i % self.char_width as usize == 0 && i != 0 {
                 braille_string.push(if break_line { '\n' } else { ' ' });
@@ -166,6 +170,10 @@ impl BrailleImg {
             }
         }
         return braille_string
+    }
+
+    fn str_len(&self) -> usize {
+        ((self.char_width * self.char_height) as usize * BRAILLE_LEN) + (self.char_height - 1) as usize
     }
 
     // TODO: remove the intermediary GrayImage completely, as it's not needed anymore.
@@ -208,5 +216,45 @@ impl BrailleImg {
             }
         }
         return braille_img;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::braille::BrailleImg;
+
+    #[test]
+    fn str_len() {
+        let img = BrailleImg::new(63, 21);
+        let string_form = img.as_str(true, true);
+        assert_eq!(string_form.len(), string_form.capacity())
+    }
+
+    #[test]
+    fn bounds_check() {
+        let mut img = BrailleImg::new(32, 32);
+        assert!(img.set_dot(0, 0, true).is_ok());
+        assert!(img.set_dot(1, 1, true).is_ok());
+        assert!(img.set_dot(31, 31, true).is_ok());
+        assert!(img.set_dot(32, 31, true).is_err());
+        assert!(img.set_dot(31, 32, true).is_err());
+    }
+
+    #[test]
+    #[should_panic]
+    fn new_null_width() {
+        let _img = BrailleImg::new(0, 1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn new_null_height() {
+        let _img = BrailleImg::new(1, 0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn new_null_both() {
+        let _img = BrailleImg::new(0, 0);
     }
 }
