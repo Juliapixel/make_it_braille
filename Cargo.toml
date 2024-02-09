@@ -8,7 +8,7 @@ description = "A CLI tool to turn images into unicode braille images"
 
 [dependencies]
 clap = { version = "4.4", features = ["derive", "cargo"] }
-env_logger = "0.10"
+env_logger = "0.11"
 image = { version = "0.24" }
 log = "0.4"
 reqwest = { version = "0.11", default-features = false, features = ["blocking", "rustls-tls", "gzip", "brotli", "deflate"] }
