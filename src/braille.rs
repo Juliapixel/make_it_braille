@@ -129,6 +129,18 @@ impl BrailleImg {
         return Ok(());
     }
 
+    pub fn get_dot(&self, x: u32, y: u32) -> Option<bool> {
+        if x > (self.dot_width - 1) || y > (self.dot_height - 1) {
+            return None;
+        }
+        let x_val_pos = x / 2;
+        let y_val_pos = y / 4;
+        // unwrapping here is safe since we already did a bounds check beforehand
+        let val = self.braille_vals.get((x_val_pos + y_val_pos * self.char_width) as usize).unwrap();
+        let mask = BrailleImg::get_bit_mask(x, y);
+        return Some(*val & mask != 0)
+    }
+
     /// # Arguments
     /// - `no_empty chars` if true, empty braille characters will be replaced by
     /// another char with a single dot raised, which avoids skewing of rows of
@@ -233,11 +245,27 @@ mod tests {
     #[test]
     fn bounds_check() {
         let mut img = BrailleImg::new(32, 32);
+
         assert!(img.set_dot(0, 0, true).is_ok());
         assert!(img.set_dot(1, 1, true).is_ok());
         assert!(img.set_dot(31, 31, true).is_ok());
         assert!(img.set_dot(32, 31, true).is_err());
         assert!(img.set_dot(31, 32, true).is_err());
+
+        assert!(img.get_dot(0, 0).is_some());
+        assert!(img.get_dot(1, 1).is_some());
+        assert!(img.get_dot(31, 31).is_some());
+        assert!(img.get_dot(32, 31).is_none());
+        assert!(img.get_dot(31, 32).is_none());
+    }
+
+    #[test]
+    fn get_dot() {
+        let mut img = BrailleImg::new(4, 4);
+
+        assert_eq!(img.get_dot(0, 0), Some(false));
+        img.set_dot(0, 0, true).unwrap();
+        assert_eq!(img.get_dot(0, 0), Some(true));
     }
 
     #[test]
