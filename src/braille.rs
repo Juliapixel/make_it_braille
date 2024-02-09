@@ -194,6 +194,7 @@ impl BrailleImg {
         ditherer.dither(&mut gray_img);
 
         let mut braille_img = BrailleImg::new(gray_img.width(), gray_img.height());
+        // this is fine since the dimensions of gray_img are always the same as braille_img's
         #[allow(unused_must_use)]
         for (x, y, pix) in gray_img.enumerate_pixels() {
             if invert {
