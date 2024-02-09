@@ -163,7 +163,7 @@ fn main() -> Result<(), Error>{
         !args.invert
     );
 
-    println!("{}", braille.to_str(!args.allow_blank_chars, true));
+    println!("{}", braille.as_str(!args.allow_blank_chars, true));
 
     debug!("turned image into braille in {}s", start.elapsed().as_secs_f32());
 
