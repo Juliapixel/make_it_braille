@@ -150,11 +150,11 @@ fn main() -> Result<(), Error>{
         image.save(out_dir.clone()).unwrap();
     }
 
-    let ditherer: &dyn Ditherer = match args.dithering {
-        DitheringOption::Sierra2 => &dithering::Sierra2Row,
-        DitheringOption::None => &dithering::None,
-        DitheringOption::Bayer4x4 => &dithering::Bayer4x4,
-        DitheringOption::Bayer2x2 => &dithering::Bayer2x2,
+    let ditherer: Box<dyn Ditherer> = match args.dithering {
+        DitheringOption::Sierra2 => Box::new(dithering::Sierra2Row),
+        DitheringOption::None => Box::new(dithering::None),
+        DitheringOption::Bayer4x4 => Box::new(dithering::Bayer4x4),
+        DitheringOption::Bayer2x2 => Box::new(dithering::Bayer2x2),
     };
 
     let braille = braille::BrailleImg::from_image(

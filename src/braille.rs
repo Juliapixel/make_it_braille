@@ -1,6 +1,8 @@
+#[cfg(feature = "image")]
 use image::DynamicImage;
 use thiserror::Error;
 
+#[cfg(feature = "image")]
 use crate::dithering::Ditherer;
 
 /// this is just all 256 braille characters, with the raised dots meaning each
@@ -189,7 +191,8 @@ impl BrailleImg {
     }
 
     // TODO: remove the intermediary GrayImage completely, as it's not needed anymore.
-    pub fn from_image(img: DynamicImage, ditherer: &dyn Ditherer, invert: bool) -> Self {
+    #[cfg(feature = "image")]
+    pub fn from_image(img: DynamicImage, ditherer: impl Ditherer, invert: bool) -> Self {
         let mut gray_img = image::GrayImage::new(img.width(), img.height());
         let img = img.into_rgba8();
 

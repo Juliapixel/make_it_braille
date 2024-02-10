@@ -1,15 +1,55 @@
 [package]
 name = "make_it_braille"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 authors = ["Juliapixel <julia@juliapixel.com>"]
 license = "MIT"
-description = "A CLI tool to turn images into unicode braille images"
+description = "A CLI tool and library to manipulate unicode braille images"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[[bin]]
+name = "make_it_braille"
+required-features = ["bin"]
+
+[lib]
+crate-type = ["lib"]
 
 [dependencies]
-clap = { version = "4.4", features = ["derive", "cargo"] }
-env_logger = "0.11"
-image = { version = "0.24" }
-log = "0.4"
-reqwest = { version = "0.11", default-features = false, features = ["blocking", "rustls-tls", "gzip", "brotli", "deflate"] }
+clap = { version = "4.4", features = ["derive", "cargo"], optional = true }
+env_logger = { version = "0.11", optional = true }
+image = { version = "0.24", optional = true, default-features = false }
+log = { version = "0.4", optional = true }
+reqwest = { version = "0.11", default-features = false, features = ["blocking", "rustls-tls", "gzip", "brotli", "deflate"], optional = true }
 thiserror = "1.0"
+
+[features]
+default = ["image"]
+bin = [
+    "dep:clap",
+    "dep:env_logger",
+    "dep:log",
+    "dep:log",
+    "dep:reqwest",
+    "dep:image",
+    "image/gif",
+    "image/jpeg",
+    "image/ico",
+    "image/png",
+    "image/pnm",
+    "image/tga",
+    "image/tiff",
+    "image/webp",
+    "image/bmp",
+    "image/hdr",
+    "image/dxt",
+    "image/dds",
+    "image/farbfeld",
+    "image/jpeg_rayon",
+    "image/openexr",
+    "image/qoi",
+    "image/avif-decoder"
+]
+image = ["dep:image"]
