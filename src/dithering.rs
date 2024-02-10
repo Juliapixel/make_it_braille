@@ -1,9 +1,15 @@
-use std::sync::OnceLock;
+use std::{ops::Deref, sync::OnceLock};
 
 use image::GrayImage;
 
 pub trait Ditherer {
     fn dither(&self, buffer: &mut GrayImage);
+}
+
+impl<T> Ditherer for T where T: Deref<Target = dyn Ditherer> {
+    fn dither(&self, buffer: &mut GrayImage) {
+        self.deref().dither(buffer)
+    }
 }
 
 fn _srgb_to_linear(val: u8) -> u8 {
