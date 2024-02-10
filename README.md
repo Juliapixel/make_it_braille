@@ -1,11 +1,12 @@
 # make_it_braille
 
-## Crate
+[![crates.io](https://img.shields.io/crates/v/make_it_braille.svg)](https://crates.io/crates/make_it_braille)
+[![Documentation](https://docs.rs/make_it_braille/badge.svg)](https://docs.rs/make_it_braille)
 
 this crate provides methods to create, manipulate and output images made out
 of unicode braille characters such as `⠝`.
 
-### Basic Usage
+## Basic Usage
 ```rust no_run
 use image::imageops::FilterType;
 use make_it_braille::{BrailleImg, dithering::Sierra2Row};
