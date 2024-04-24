@@ -1,6 +1,6 @@
 [package]
 name = "make_it_braille"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2021"
 authors = ["Juliapixel <julia@juliapixel.com>"]
 license = "MIT"
@@ -20,9 +20,9 @@ crate-type = ["lib"]
 [dependencies]
 clap = { version = "4.4", features = ["derive", "cargo"], optional = true }
 env_logger = { version = "0.11", optional = true }
-image = { version = "0.24", optional = true, default-features = false }
+image = { version = "0.25", optional = true, default-features = false }
 log = { version = "0.4", optional = true }
-reqwest = { version = "0.11", default-features = false, features = ["blocking", "rustls-tls", "gzip", "brotli", "deflate"], optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls", "gzip", "brotli", "deflate"], optional = true }
 thiserror = "1.0"
 
 [features]
@@ -44,12 +44,9 @@ bin = [
     "image/webp",
     "image/bmp",
     "image/hdr",
-    "image/dxt",
     "image/dds",
-    "image/farbfeld",
-    "image/jpeg_rayon",
-    "image/openexr",
+    "image/exr",
     "image/qoi",
-    "image/avif-decoder"
+    "image/avif"
 ]
 image = ["dep:image"]
