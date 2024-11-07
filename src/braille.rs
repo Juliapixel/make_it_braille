@@ -1,8 +1,4 @@
 #[cfg(feature = "image")]
-use image::DynamicImage;
-use thiserror::Error;
-
-#[cfg(feature = "image")]
 use crate::dithering::Ditherer;
 
 /// this is just all 256 braille characters, with the raised dots meaning each
@@ -52,10 +48,21 @@ pub const BRAILLE_CHARS: [char; 256] = [
 
 const BRAILLE_LEN: usize = BRAILLE_CHARS[0].len_utf8();
 
-#[derive(Debug, Clone, Error)]
+#[derive(Debug, Clone, Copy)]
 pub enum Error {
-    #[error("the coordinates (x: {0}, y: {1}) were outside the bounds of the BrailleImg (width: {2}, height: {3})")]
     OutOfBounds(u32, u32, u32, u32),
+}
+
+impl std::error::Error for Error {}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::OutOfBounds(x, y, w, h) => {
+                write!(f, "the coordinates (x: {x}, y: {y}) were outside the bounds of the BrailleImg (width: {w}, height: {h})")
+            },
+        }
+    }
 }
 
 pub struct BrailleImg {
@@ -188,11 +195,9 @@ impl BrailleImg {
         ((self.char_width * self.char_height) as usize * BRAILLE_LEN) + (self.char_height - 1) as usize
     }
 
-    // TODO: remove the intermediary GrayImage completely, as it's not needed anymore.
     #[cfg(feature = "image")]
-    pub fn from_image(img: DynamicImage, ditherer: impl Ditherer, invert: bool) -> Self {
+    pub fn from_image(img: impl image::GenericImageView<Pixel=image::Rgba<u8>>, ditherer: impl Ditherer, invert: bool) -> Self {
         let mut gray_img = image::GrayImage::new(img.width(), img.height());
-        let img = img.into_rgba8();
 
         let compute_lightness = |rgba: &[f32; 4]| -> u8 {
             ((rgba[0] * 0.2126 + rgba[1] * 0.7152 + rgba[2] * 0.0722) * (rgba[3] / 255.0))
@@ -200,7 +205,7 @@ impl BrailleImg {
               .round() as u8
         };
 
-        for (x, y, pix) in img.enumerate_pixels() {
+        for (x, y, pix) in img.pixels() {
             let lightness = compute_lightness(
                 &[
                     pix.0[0] as f32,
