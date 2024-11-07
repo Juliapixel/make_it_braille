@@ -1,61 +1,17 @@
-use std::{path::PathBuf, time::Instant, io::{Read, stdin}};
+#![cfg(feature = "bin")]
+
+use std::{fs::read, io::{stdin, Read}, path::PathBuf, time::Instant};
 
 use clap::Parser;
-use image::{DynamicImage, EncodableLayout, GenericImageView};
+use image::GenericImageView;
 use log::{debug, error};
 use make_it_braille as lib;
 use lib::{braille, dithering::{Ditherer, self}};
-use reqwest::{header::HeaderMap, Url};
-use thiserror::Error;
 
 mod cli;
-use cli::{Args, DitheringOption};
+use cli::{util::{load_as_frames, try_get_from_url, Error}, Args, DitheringOption};
 
 use crate::cli::Mode;
-
-#[derive(Debug, Error)]
-enum Error {
-    #[error(transparent)]
-    InvalidImage(#[from] image::error::ImageError),
-    #[error("there as an I/O error!")]
-    IoError(#[from] std::io::Error),
-    #[error(transparent)]
-    FetchError(#[from] FetchError)
-}
-
-#[derive(Debug, Error)]
-enum FetchError {
-    #[error("the provided URL was not valid")]
-    BadUrl,
-    #[error(transparent)]
-    RequestError(#[from] reqwest::Error),
-    #[error("the server's response was bad")]
-    BadResponse,
-    #[error(transparent)]
-    BadImageData(#[from] image::error::ImageError)
-}
-
-fn try_get_from_url(url: Url) -> Result<DynamicImage, FetchError> {
-    let mut headers = HeaderMap::new();
-    headers.insert("Accept", "image/png,image/jpeg,image/webp,image/gif,image/tiff".parse().unwrap());
-    headers.insert("Referer", url.host_str().ok_or(FetchError::BadUrl)?.parse().unwrap());
-    headers.insert("Cache-Control", "no-cache".parse().unwrap());
-    headers.insert("User-Agent", format!("{}/{}", env!("CARGO_BIN_NAME"), env!("CARGO_PKG_VERSION")).parse().unwrap());
-
-
-    let client = reqwest::blocking::ClientBuilder::new()
-        .default_headers(headers)
-        .build().unwrap();
-
-    let resp = client.get(url)
-        .send()?.error_for_status()?;
-
-    debug!("response info: {:#?}", &resp);
-
-    let payload = resp.bytes().map_err(|_| { FetchError::BadResponse })?;
-
-    image::load_from_memory(&payload.as_bytes()).map_err(|e| { FetchError::BadImageData(e) })
-}
 
 fn main() -> Result<(), Error>{
     let args = Args::parse();
@@ -76,25 +32,38 @@ fn main() -> Result<(), Error>{
     let mut image = match args.input {
         Mode::File(path) => {
             debug!("opening image as file");
-            match image::open(path) {
-                Ok(o) => o,
-                Err(e) => {
+            let buf = read(path)?;
+            match load_as_frames(buf, None)?.nth(args.frame.unwrap_or_default() as usize) {
+                Some(Ok(f)) => image::DynamicImage::ImageRgba8(f.into_buffer()),
+                Some(Err(e)) => {
                     error!("{e}");
                     return Err(e)?;
                 }
+                None => {
+                    error!("no such frame");
+                    return Err(Error::NoSuchFrame(args.frame.unwrap_or_default()));
+                },
             }
         },
         Mode::Url(url) => {
             debug!("trying to fetch image as URL");
             match try_get_from_url(url) {
-                Ok(o) => o,
-                Err(e) => {
-                    match e {
-                        e => {
+                Ok(mut o) => {
+                    match o.nth(args.frame.unwrap_or_default() as usize) {
+                        Some(Ok(f)) => image::DynamicImage::ImageRgba8(f.into_buffer()),
+                        Some(Err(e)) => {
                             error!("{e}");
                             return Err(e)?;
                         }
+                        None => {
+                            error!("no such frame");
+                            return Err(Error::NoSuchFrame(args.frame.unwrap_or_default()));
+                        },
                     }
+                },
+                Err(e) => {
+                    error!("{e}");
+                    return Err(e)?;
                 },
             }
         },
@@ -103,7 +72,17 @@ fn main() -> Result<(), Error>{
             let mut input = Vec::new();
             stdin().read_to_end(&mut input)?;
 
-            image::load_from_memory(&input)?
+            match load_as_frames(input, None)?.nth(args.frame.unwrap_or_default() as usize) {
+                Some(Ok(f)) => image::DynamicImage::ImageRgba8(f.into_buffer()),
+                Some(Err(e)) => {
+                    error!("{e}");
+                    return Err(e)?;
+                }
+                None => {
+                    error!("no such frame");
+                    return Err(Error::NoSuchFrame(args.frame.unwrap_or_default()));
+                },
+            }
         },
     };
 
@@ -114,7 +93,7 @@ fn main() -> Result<(), Error>{
     let (width, height) = match (args.width, args.height) {
         (None, None) => {
             let aspect_ratio = image.width() as f32 / image.height() as f32;
-            let h = (64 as f32 / aspect_ratio).round() as u32;
+            let h = (64.0 / aspect_ratio).round() as u32;
             (64, h.clamp(1, u32::MAX))
         },
         (None, Some(h)) => {

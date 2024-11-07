@@ -73,7 +73,6 @@ impl BrailleImg {
     /// if either width or height is 0
     pub fn new(width: u32, height: u32) -> Self {
         assert!(width != 0 && height != 0, "width and height must be greater than 0");
-        let mut vals: Vec<u8> = Vec::new();
         let x_size = width / 2 + (width % 2);
         let extra_row = if height % 4 != 0 {
             1
@@ -81,10 +80,9 @@ impl BrailleImg {
             0
         };
         let y_size = height / 4 + extra_row;
-        vals.reserve((x_size * y_size) as usize);
-        for _ in 0..x_size * y_size {
-            vals.push(0);
-        }
+
+        let vals = vec![0; (x_size * y_size) as usize];
+
         BrailleImg {
             braille_vals: vals,
             dot_width: width,
@@ -128,7 +126,7 @@ impl BrailleImg {
         } else {
             *val &= !mask;
         }
-        return Ok(());
+        Ok(())
     }
 
     pub fn get_dot(&self, x: u32, y: u32) -> Option<bool> {
@@ -140,15 +138,15 @@ impl BrailleImg {
         // unwrapping here is safe since we already did a bounds check beforehand
         let val = self.braille_vals.get((x_val_pos + y_val_pos * self.char_width) as usize).unwrap();
         let mask = BrailleImg::get_bit_mask(x, y);
-        return Some(*val & mask != 0)
+        Some(*val & mask != 0)
     }
 
     /// # Arguments
     /// - `no_empty chars` if true, empty braille characters will be replaced by
-    /// another char with a single dot raised, which avoids skewing of rows of
-    /// characters
+    ///   another char with a single dot raised, which avoids skewing of rows of
+    ///   characters
     /// - `break_line` if true, each row of characters will be separated by a
-    /// newline character `\n`, otherwise they will be separated by a space
+    ///   newline character `\n`, otherwise they will be separated by a space
     #[deprecated = "you should use BrailleImg::as_str() instead"]
     pub fn to_str(self, no_empty_chars: bool, break_line: bool) -> String {
         let mut braille_string = String::new();
@@ -162,15 +160,15 @@ impl BrailleImg {
                 braille_string.push(BRAILLE_CHARS[val as usize])
             }
         }
-        return braille_string
+        braille_string
     }
 
     /// # Arguments
     /// - `no_empty chars` if true, empty braille characters will be replaced by
-    /// another char with a single dot raised, which avoids skewing of rows of
-    /// characters
+    ///   another char with a single dot raised, which avoids skewing of rows of
+    ///   characters
     /// - `break_line` if true, each row of characters will be separated by a
-    /// newline character `\n`, otherwise they will be separated by a space
+    ///   newline character `\n`, otherwise they will be separated by a space
     pub fn as_str(&self, no_empty_chars: bool, break_line: bool) -> String {
         let mut braille_string = String::with_capacity(self.str_len());
         for (i, val) in self.braille_vals.iter().enumerate() {
@@ -183,7 +181,7 @@ impl BrailleImg {
                 braille_string.push(BRAILLE_CHARS[*val as usize])
             }
         }
-        return braille_string
+        braille_string
     }
 
     fn str_len(&self) -> usize {
@@ -197,9 +195,9 @@ impl BrailleImg {
         let img = img.into_rgba8();
 
         let compute_lightness = |rgba: &[f32; 4]| -> u8 {
-            return ((rgba[0] * 0.2126 + rgba[1] * 0.7152 + rgba[2] * 0.0722) * (rgba[3] / 255.0))
+            ((rgba[0] * 0.2126 + rgba[1] * 0.7152 + rgba[2] * 0.0722) * (rgba[3] / 255.0))
               .clamp(0.0, 255.0)
-              .round() as u8;
+              .round() as u8
         };
 
         for (x, y, pix) in img.enumerate_pixels() {
@@ -224,13 +222,11 @@ impl BrailleImg {
                 if pix.0[0] > 96 {
                     braille_img.set_dot(x, y, true);
                 }
-            } else {
-                if pix.0[0] < 96 {
-                    braille_img.set_dot(x, y, true);
-                }
+            } else if pix.0[0] < 96 {
+                braille_img.set_dot(x, y, true);
             }
         }
-        return braille_img;
+        braille_img
     }
 }
 

@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use clap::{Parser, ValueEnum};
 use reqwest::Url;
 
+pub (crate) mod util;
+
 #[derive(Debug, Parser)]
 #[command(author, version, about)]
 pub struct Args {
@@ -16,6 +18,10 @@ pub struct Args {
     #[arg(long, long_help, help = "height in dots of output image")]
     #[arg(value_parser = validate_greater_than_zero)]
     pub height: Option<u32>,
+
+    /// frame of animated image to use, starting at frame 0
+    #[arg(long, short, long_help, help = "height in dots of output image")]
+    pub frame: Option<u32>,
 
     /// dithering algorithm to use, defaults to the Sierra two-row algorithm
     #[arg(long, long_help, default_value = "sierra2", help = "dithering algorithm to use")]
@@ -71,10 +77,10 @@ fn parse_mode(val: &str) -> Result<Mode, &'static str> {
 
     match Url::try_from(val) {
         Ok(url) => match url.scheme().to_ascii_lowercase() {
-            x if x == "http" || x == "https" => { return Ok(Mode::Url(url)) },
+            x if x == "http" || x == "https" => { Ok(Mode::Url(url)) },
             _ => { Err("the given URL must be either http or https") }
         },
-        Err(_) => return Err("the given input was not a valid argument"),
+        Err(_) => Err("the given input was not a valid argument"),
     }
 }
 
@@ -82,9 +88,9 @@ fn validate_greater_than_zero(val: &str) -> Result<u32, &'static str> {
     match val.parse::<u32>() {
         Ok(o) => {
             if o > 0 {
-                return Ok(o)
+                Ok(o)
             } else {
-                return Err("this argument cannot be 0")
+                Err("this argument cannot be 0")
             }
         },
         Err(_) => Err("must be a positive integer"),
