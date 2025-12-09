@@ -10,12 +10,12 @@ pub (crate) mod util;
 pub struct Args {
     /// width in dots of the output image, defaults to 64, keeps aspect ratio if
     /// only height is defined instead
-    #[arg(long, long_help, help = "width in dots of the output image")]
+    #[arg(long, short, long_help, help = "width in dots of the output image")]
     #[arg(value_parser = validate_greater_than_zero)]
     pub width: Option<u32>,
 
     /// height in dots of the output image, keeps aspect ratio if not defined
-    #[arg(long, long_help, help = "height in dots of output image")]
+    #[arg(long, short, long_help, help = "height in dots of output image")]
     #[arg(value_parser = validate_greater_than_zero)]
     pub height: Option<u32>,
 
@@ -24,17 +24,17 @@ pub struct Args {
     pub frame: Option<u32>,
 
     /// dithering algorithm to use, defaults to the Sierra two-row algorithm
-    #[arg(long, long_help, default_value = "sierra2", help = "dithering algorithm to use")]
+    #[arg(long, short, long_help, default_value = "sierra2", help = "dithering algorithm to use")]
     pub dithering: DitheringOption,
 
     /// allows blank braille characters, instead of replacing them with a single dot,
     /// which can cause images to appear skewed, especially on windows, even with
     /// a monospace font.
-    #[arg(long, long_help, help = "allow blank braille characters")]
+    #[arg(long, short='b', long_help, help = "allow blank braille characters")]
     pub allow_blank_chars: bool,
 
     /// invert dots, making light values in the source image be raised dots instead
-    #[arg(long)]
+    #[arg(long, short)]
     pub invert: bool,
 
     /// adjust contrast, positive values increase contrast, negative values decrease it
@@ -100,8 +100,12 @@ fn validate_greater_than_zero(val: &str) -> Result<u32, &'static str> {
 #[derive(Debug, Clone, ValueEnum, Default)]
 pub enum DitheringOption {
     #[default]
+    #[value(alias("s2"))]
     Sierra2,
+    #[value(alias("b4"))]
     Bayer4x4,
+    #[value(alias("b2"))]
     Bayer2x2,
+    #[value(alias("n"))]
     None,
 }

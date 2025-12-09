@@ -32,7 +32,6 @@ bin = [
     "dep:clap",
     "dep:env_logger",
     "dep:log",
-    "dep:log",
     "dep:reqwest",
     "dep:image",
     "image/gif",
