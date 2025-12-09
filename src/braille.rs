@@ -11,6 +11,7 @@ use crate::dithering::Ditherer;
 /// 6  7
 /// ```
 ///
+#[rustfmt::skip]
 pub const BRAILLE_CHARS: [char; 256] = [
 '⠀', '⠁', '⠂', '⠃', '⠄', '⠅', '⠆', '⠇',
 '⠈', '⠉', '⠊', '⠋', '⠌', '⠍', '⠎', '⠏',
@@ -60,7 +61,7 @@ impl std::fmt::Display for Error {
         match self {
             Error::OutOfBounds(x, y, w, h) => {
                 write!(f, "the coordinates (x: {x}, y: {y}) were outside the bounds of the BrailleImg (width: {w}, height: {h})")
-            },
+            }
         }
     }
 }
@@ -79,13 +80,12 @@ impl BrailleImg {
     /// # Panics
     /// if either width or height is 0
     pub fn new(width: u32, height: u32) -> Self {
-        assert!(width != 0 && height != 0, "width and height must be greater than 0");
+        assert!(
+            width != 0 && height != 0,
+            "width and height must be greater than 0"
+        );
         let x_size = width / 2 + (width % 2);
-        let extra_row = if height % 4 != 0 {
-            1
-        } else {
-            0
-        };
+        let extra_row = if height.is_multiple_of(4) { 1 } else { 0 };
         let y_size = height / 4 + extra_row;
 
         let vals = vec![0; (x_size * y_size) as usize];
@@ -102,31 +102,34 @@ impl BrailleImg {
     /// maps x and y coordinates to which bit will represent the dot on the
     /// character according to [BRAILLE_CHARS]
     fn get_bit_mask(x: u32, y: u32) -> u8 {
-        if x % 2 == 0 {
+        if x.is_multiple_of(2) {
             match y % 4 {
                 0 => 0b00000001,
                 1 => 0b00000010,
                 2 => 0b00000100,
-                _ => 0b01000000
+                _ => 0b01000000,
             }
         } else {
             match y % 4 {
                 0 => 0b00001000,
                 1 => 0b00010000,
                 2 => 0b00100000,
-                _ => 0b10000000
+                _ => 0b10000000,
             }
         }
     }
 
     pub fn set_dot(&mut self, x: u32, y: u32, raised: bool) -> Result<(), Error> {
         if x > (self.dot_width - 1) || y > (self.dot_height - 1) {
-            return Err(Error::OutOfBounds(x, y, self.char_width, self.char_height))
+            return Err(Error::OutOfBounds(x, y, self.char_width, self.char_height));
         }
         let x_val_pos = x / 2;
         let y_val_pos = y / 4;
         // unwrapping here is safe since we already did a bounds check beforehand
-        let val = self.braille_vals.get_mut((x_val_pos + y_val_pos * self.char_width) as usize).unwrap();
+        let val = self
+            .braille_vals
+            .get_mut((x_val_pos + y_val_pos * self.char_width) as usize)
+            .unwrap();
         let mask = BrailleImg::get_bit_mask(x, y);
         if raised {
             *val |= mask;
@@ -143,7 +146,10 @@ impl BrailleImg {
         let x_val_pos = x / 2;
         let y_val_pos = y / 4;
         // unwrapping here is safe since we already did a bounds check beforehand
-        let val = self.braille_vals.get((x_val_pos + y_val_pos * self.char_width) as usize).unwrap();
+        let val = self
+            .braille_vals
+            .get((x_val_pos + y_val_pos * self.char_width) as usize)
+            .unwrap();
         let mask = BrailleImg::get_bit_mask(x, y);
         Some(*val & mask != 0)
     }
@@ -156,18 +162,7 @@ impl BrailleImg {
     ///   newline character `\n`, otherwise they will be separated by a space
     #[deprecated = "you should use BrailleImg::as_str() instead"]
     pub fn to_str(self, no_empty_chars: bool, break_line: bool) -> String {
-        let mut braille_string = String::new();
-        for (i, val) in self.braille_vals.into_iter().enumerate() {
-            if i % self.char_width as usize == 0 && i != 0 {
-                braille_string.push(if break_line { '\n' } else { ' ' });
-            }
-            if val == 0 && no_empty_chars {
-                braille_string.push(BRAILLE_CHARS[1 << 2])
-            } else {
-                braille_string.push(BRAILLE_CHARS[val as usize])
-            }
-        }
-        braille_string
+        self.as_str(no_empty_chars, break_line)
     }
 
     /// # Arguments
@@ -192,28 +187,31 @@ impl BrailleImg {
     }
 
     fn str_len(&self) -> usize {
-        ((self.char_width * self.char_height) as usize * BRAILLE_LEN) + (self.char_height - 1) as usize
+        ((self.char_width * self.char_height) as usize * BRAILLE_LEN)
+            + (self.char_height - 1) as usize
     }
 
     #[cfg(feature = "image")]
-    pub fn from_image(img: impl image::GenericImageView<Pixel=image::Rgba<u8>>, ditherer: impl Ditherer, invert: bool) -> Self {
+    pub fn from_image(
+        img: impl image::GenericImageView<Pixel = image::Rgba<u8>>,
+        ditherer: impl Ditherer,
+        invert: bool,
+    ) -> Self {
         let mut gray_img = image::GrayImage::new(img.width(), img.height());
 
         let compute_lightness = |rgba: &[f32; 4]| -> u8 {
             ((rgba[0] * 0.2126 + rgba[1] * 0.7152 + rgba[2] * 0.0722) * (rgba[3] / 255.0))
-              .clamp(0.0, 255.0)
-              .round() as u8
+                .clamp(0.0, 255.0)
+                .round() as u8
         };
 
         for (x, y, pix) in img.pixels() {
-            let lightness = compute_lightness(
-                &[
-                    pix.0[0] as f32,
-                    pix.0[1] as f32,
-                    pix.0[2] as f32,
-                    pix.0[3] as f32
-                ]
-            );
+            let lightness = compute_lightness(&[
+                pix.0[0] as f32,
+                pix.0[1] as f32,
+                pix.0[2] as f32,
+                pix.0[3] as f32,
+            ]);
             gray_img.put_pixel(x, y, image::Luma::<u8>([lightness]));
         }
 
@@ -221,14 +219,13 @@ impl BrailleImg {
 
         let mut braille_img = BrailleImg::new(gray_img.width(), gray_img.height());
         // this is fine since the dimensions of gray_img are always the same as braille_img's
-        #[allow(unused_must_use)]
         for (x, y, pix) in gray_img.enumerate_pixels() {
             if invert {
                 if pix.0[0] > 96 {
-                    braille_img.set_dot(x, y, true);
+                    let _ = braille_img.set_dot(x, y, true);
                 }
             } else if pix.0[0] < 96 {
-                braille_img.set_dot(x, y, true);
+                let _ = braille_img.set_dot(x, y, true);
             }
         }
         braille_img
