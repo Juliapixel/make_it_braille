@@ -1,6 +1,6 @@
 [package]
 name = "make_it_braille"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 authors = ["Juliapixel <julia@juliapixel.com>"]
 license = "MIT"
@@ -19,6 +19,7 @@ crate-type = ["lib"]
 
 [dependencies]
 clap = { version = "4.4", features = ["derive", "cargo"], optional = true }
+clap_complete = "4.5.61"
 env_logger = { version = "0.11", optional = true }
 image = { version = "0.25", optional = true, default-features = false }
 log = { version = "0.4", optional = true }

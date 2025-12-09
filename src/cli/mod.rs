@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, ValueEnum};
+use clap_complete::Shell;
 use reqwest::Url;
 
 pub (crate) mod util;
@@ -10,12 +11,12 @@ pub (crate) mod util;
 pub struct Args {
     /// width in dots of the output image, defaults to 64, keeps aspect ratio if
     /// only height is defined instead
-    #[arg(long, short, long_help, help = "width in dots of the output image")]
+    #[arg(long, long_help, help = "width in dots of the output image")]
     #[arg(value_parser = validate_greater_than_zero)]
     pub width: Option<u32>,
 
     /// height in dots of the output image, keeps aspect ratio if not defined
-    #[arg(long, short, long_help, help = "height in dots of output image")]
+    #[arg(long, long_help, help = "height in dots of output image")]
     #[arg(value_parser = validate_greater_than_zero)]
     pub height: Option<u32>,
 
@@ -58,10 +59,18 @@ pub struct Args {
 pub enum Mode {
     File(PathBuf),
     Url(Url),
+    Completions(Shell),
     Stdin
 }
 
 fn parse_mode(val: &str) -> Result<Mode, &'static str> {
+    if let Some(shell) = val.strip_prefix("completions_") {
+        let Ok(sh) = shell.parse() else {
+            return Err("shell must be one of (bash, elvish, fish, zsh, ps)");
+        };
+        return Ok(Mode::Completions(sh))
+    }
+
     if val == "-" {
         return Ok(Mode::Stdin)
     }

@@ -2,7 +2,8 @@
 
 use std::{fs::read, io::{stdin, Read}, path::PathBuf, time::Instant};
 
-use clap::Parser;
+use clap::{CommandFactory, Parser};
+use clap_complete::generate;
 use image::GenericImageView;
 use log::{debug, error};
 use make_it_braille as lib;
@@ -84,6 +85,11 @@ fn main() -> Result<(), Error>{
                 },
             }
         },
+        Mode::Completions(sh) => {
+            let cmd = std::env::args().next().unwrap_or_else(|| env!("CARGO_BIN_NAME").to_string());
+            generate(sh, &mut Args::command(), &cmd, &mut std::io::stdout());
+            return Ok(());
+        }
     };
 
     debug!("source image dimensions: {}x{}", image.width(), image.height());
