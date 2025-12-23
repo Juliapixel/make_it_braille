@@ -30,7 +30,14 @@
 
         devShells.default = pkgs.mkShell {
           packages = [
-            pkgs.fenix.stable.toolchain
+            (pkgs.fenix.complete.withComponents [
+              "cargo"
+              "clippy"
+              "rust-src"
+              "rustc"
+              "rustfmt"
+              "rust-analyzer"
+            ])
           ];
         };
       }
