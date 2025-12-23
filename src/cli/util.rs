@@ -41,7 +41,6 @@ pub fn try_get_from_url(url: Url) -> Result<image::Frames<'static>, Error> {
         "Referer",
         url.host_str().ok_or(FetchError::BadUrl)?.parse().unwrap(),
     );
-    headers.insert("Cache-Control", "no-cache".parse().unwrap());
     headers.insert(
         "User-Agent",
         format!("{}/{}", env!("CARGO_BIN_NAME"), env!("CARGO_PKG_VERSION"))

@@ -85,7 +85,7 @@ impl BrailleImg {
             "width and height must be greater than 0"
         );
         let x_size = width / 2 + (width % 2);
-        let extra_row = if height.is_multiple_of(4) { 1 } else { 0 };
+        let extra_row = if !height.is_multiple_of(4) { 1 } else { 0 };
         let y_size = height / 4 + extra_row;
 
         let vals = vec![0; (x_size * y_size) as usize];
